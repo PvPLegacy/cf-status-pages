@@ -1,0 +1,212 @@
+<!-- For the sake of performance, I'm going to include everything into one file -->
+<!doctype HTML5>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:description" content="This is not the page you are looking for...">
+    <meta name="twitter:image"
+        content="https://static.wikia.nocookie.net/minecraft_gamepedia/images/f/fc/Bucket_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200510234539">
+    <meta property="og:title" content="404 Not Found" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="This is not the page you are looking for...">
+    <meta property="og:image"
+        content="https://static.wikia.nocookie.net/minecraft_gamepedia/images/f/fc/Bucket_JE2_BE2.png/revision/latest/scale-to-width-down/160?cb=20200510234539">
+
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200&display=swap" rel="stylesheet">
+
+    <style type="text/css">
+        html {
+            font-family: Raleway;
+        }
+
+        div {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .container {
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        .title {
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+            justify-content: space-around;
+            font-size: 4em;
+            user-select: none;
+        }
+
+        .title>span {
+            margin: 0;
+        }
+
+        footer {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            position: fixed;
+            bottom: 0;
+            color: rgba(0, 0, 0, 0.5)
+        }
+
+        footer>a {
+            color: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            <div class="title">
+                <span
+                    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 100; font-size: 4em;">404</span>
+                <span>Fishtank Not Found</span>
+            </div>
+        </div>
+
+        <div>
+            <canvas id="fish">
+            </canvas>
+        </div>
+    </div>
+    <footer>
+        Made by <a href="https://github.com/Mexican-Man" target=”_blank”>Cole</a>.
+    </footer>
+
+    <!-- Script -->
+    <script type="text/javascript">
+        // Settings
+        const [cWidth, cHeight] = [800, 400]; // Canvas size
+        const [fWidth, fHeight] = [8, 8]; // Size of a "pixel", fish is 16x16, particles are 8x8
+        const [intOffset, intRange] = [100, 1000] // Fish bounce time range & offset in ms. i.e. wait 500ms, then wait random interval between 0-4000ms
+        const [bounceOffset, bounceRange] = [6, 15] // The range & offset for the speed that the fish jumps at. i.e. up 6, then up random amount between 0-15
+        const fishSplashFactor = 0.5; // Percent to represent how many splashes the fish should make
+        const [splashXOffset, splashXRange, splashYOffset, splashYRange] = [-5, 10, 10, 10] // The range & offset for the speed that the fish jumps at. i.e. up 6, then up random amount between 0-15
+        const gravity = 0.5;
+        const shadowColour = "rgba(0,0,0,0.3)";
+        const shadowXOffset = 5;
+        var splashParticles = [new Image, new Image, new Image, new Image];
+        splashParticles[0].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAALGPC/xhBQAAABpJREFUGFdjYBhWwD3rzH8QLeEBobEDM0xJABJbBql2MMTSAAAAAElFTkSuQmCC";
+        splashParticles[1].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAALGPC/xhBQAAABdJREFUGNNjYBhWwD3rzH+iFEp4oCoEAKd4BKjrqv1RAAAAAElFTkSuQmCC";
+        splashParticles[2].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAALGPC/xhBQAAABJJREFUGBljGJ5AwuPMfwZSAABmZgIs5QTLpgAAAABJRU5ErkJggg==";
+        splashParticles[3].src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAABGdBTUEAALGPC/xhBQAAABZJREFUGNNjYBhWwD3rzH/8KsywKwAAtPIEflnE2nMAAAAASUVORK5CYII=";
+        var fishImg = new Image;
+        fishImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACDUlEQVQ4jaWTz4sSYRjHv++mrI6CdRFvJYoehEWQof0PPEksHjwUQYduIXgJBEHEW/fwHtUpqEEE7ewlbEE36zBphki54shO+WP2IG88j4y51qm+oM88zPfzPM/7Y/C/En/jy+UyxuMx3G43fD6fNE1TrFYrBAIBHAaPtr7H9+7gYB9Op9OYTqdkloPBQC6XS1CkfDgcYq6fkk3S35PnGhz7XUmj0UgqioJ4PM45xXa7zaDL5YJ3g8jz+VJsCxBMXchog7ZoikgkwtmN2DHHD+cG/B73Zgn5fB7r9Zq7kJGAXbhUKuHlm1dbkHTL8U1IvQVB61j127AsS+q6jvefzvC58xHFYhHz+fzKJH6/H5PJBMPrQdw0v0JKyQV4Q969fsbdCfJ6vRwzmQyDtVqNcyE2hxYMBtFsNqEoijiwR7p9ch+LxYKfbfjuwwf8o84EE5jNZpFKpdg7m80gHj19AdO6lD8uLngsj8fDLykSSFJVlSPdA9rsVquFRqNBuXCY1iV8P7+Iw+9j6KORLBQKbNw5mW2sVqvcneBkMoler4drZ281HB/F4XQ6pWEYfPui0SgXoL3YLZJIJLhIv9+n1yIcDv++iYZhiFgsJqi6faHIvD+B3Z2Uy+Wufgs0vqqqslKpsMleu71mUigUYoa6/1FA0zQ2W5aFbrfLx2uLCnY6HUHT1Ov1/U/oHwXgF6zwGJ7ovbarAAAAAElFTkSuQmCC";
+
+
+        var canvas;
+        var ctx;
+        var shadow;
+        var fish;
+        var splashes = [];
+
+        class canvasElement {
+            constructor(image) {
+                this.el = image;
+                this.w = fWidth * image.naturalWidth;
+                this.h = fHeight * image.naturalHeight;
+                this.x = (cWidth / 2) - 64;
+                this.y = cHeight;
+                this.vy = 0;
+                this.vx = 0;
+                this.stopped = false;
+            }
+        }
+
+        function bounce() {
+            fish.vy = (Math.random() * bounceRange) + bounceOffset; // Jumping range
+            fish.y -= 1; // Do this to jumpstart the animation logic
+            fish.stopped = false;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, cWidth, cHeight);
+
+            // Shadow
+            ctx.fill(shadow);
+
+            // Fish physics
+            if (!fish.stopped) {
+                if (fish.y >= cHeight - fish.h - 40 && !fish.stopped) {
+                    // When on the ground, reset position and motion
+                    fish.vy = 0;
+                    fish.y = cHeight - fish.h - 40;
+                    fish.stopped = true;
+
+                    // Bounce again after random time
+                    let delay = (Math.random() * intRange) + intOffset;
+                    setTimeout(bounce, delay);
+                } else {
+                    if (fish.y >= cHeight - fish.h - 60 && fish.vy <= 0) {
+                        if (Math.random() <= fishSplashFactor) {
+                            // Create splash
+                            let splash = new canvasElement(splashParticles[Math.floor(Math.random() * splashParticles.length)]);
+                            splash.vx = (Math.random() * splashXRange) + splashXOffset;
+                            splash.vy = (Math.random() * splashYRange) + splashYOffset;
+
+                            // Align position with fish
+                            splash.x = fish.x + (fish.w / 4);
+                            splash.y = fish.y;
+                            splashes.push(splash);
+                        }
+                    }
+                    // Continue with regular physics
+                    fish.y -= fish.vy * gravity;
+                    fish.vy -= gravity;
+                }
+            }
+
+            // Splashes
+            splashes.forEach((splash, index) => {
+                if (splash.y >= cHeight) {
+                    // If on ground, delete
+                    splashes.splice(index, 1);
+                    return;
+                } else {
+                    // Continue with regular physics
+                    splash.y -= splash.vy * gravity;
+                    splash.vy -= gravity;
+                    splash.x -= splash.vx * gravity;
+                    splash.vx *= 1;
+                }
+                ctx.drawImage(splash.el, splash.x, splash.y, splash.w, splash.h);
+            });
+
+            ctx.drawImage(fish.el, fish.x, fish.y, fish.w, fish.h);
+
+            requestAnimationFrame(draw);
+
+        }
+
+        window.onload = () => {
+            // Canvas
+            canvas = document.getElementById("fish");
+            ctx = canvas.getContext("2d");
+            canvas.width = cWidth;
+            canvas.height = cHeight;
+            ctx.imageSmoothingEnabled = false;
+
+            // Load shadow
+
+            // Load fish
+            fish = new canvasElement(fishImg);
+            ctx.drawImage(fish.el, fish.x, fish.y, fish.w, fish.h); // Or at whatever offset you like
+
+            // Drop shadow
+            ctx.fillStyle = shadowColour;
+            shadow = new Path2D();
+            shadow.ellipse((cWidth / 2) + shadowXOffset, cHeight * 0.9, fish.w / 3, fish.h / 5, 0, 0, 2 * Math.PI);
+            shadow.closePath();
+
+            // Start animation
+            requestAnimationFrame(draw);
+
+        }
+    </script>
+</body>
